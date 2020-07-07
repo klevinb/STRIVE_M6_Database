@@ -23,7 +23,7 @@ function Table1(props) {
                         <td>{student.surname}</td>
                         <td>{student.email}</td>
                         <td className="d-flex">
-                            <Button onClick={() => props.getStudentPhoto(student.id)} variant="warning" className="mr-3">View</Button>
+                            <Button onClick={() => props.getStudentPhoto(student._id)} variant="warning" className="mr-3">View</Button>
                             <Button variant={"info"}>
                                 <a style={{ color: "white" }} href={"http://127.0.0.1:3003/students/" + student._id + "/download"}>Download</a>
                             </Button>

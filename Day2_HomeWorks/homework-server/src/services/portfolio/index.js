@@ -3,12 +3,12 @@ const fs = require("fs-extra")
 const path = require("path")
 const uniqid = require("uniqid")
 const multer = require("multer")
-
+const ProjectSchema = require("./schema")
+const { find } = require("./schema")
 
 const router = express.Router()
 const upload = multer()
 
-const portfoliosFilePath = path.join(__dirname, "portfolios.json")
 const reviewsFilePath = path.join(__dirname, "reviews.json")
 
 const projectsImagePath = path.join(__dirname, "../../public/img/projects")
@@ -19,25 +19,19 @@ const getReviews = () => {
     return reviews
 }
 
-const getPortfolios = () => {
-    const filePortfoliosAsBuffer = fs.readFileSync(portfoliosFilePath)
-    const portfolios = JSON.parse(filePortfoliosAsBuffer.toString())
-    return portfolios
-}
 
-router.get("/", (req, res, next) => {
-    const portfolios = getPortfolios()
-    if (portfolios.length > 0) {
-        if (req.query && req.query.name) {
-            const filterPortfolio = portfolios.filter(project => project.name.toLowerCase().startsWith(req.query.name))
-            res.send(filterPortfolio)
+router.get("/", async (req, res, next) => {
+    try {
+        const projects = await ProjectSchema.find({})
+        if (projects) {
+            res.status(200).send(projects)
         } else {
-            res.send(portfolios)
+            const error = new Error()
+            error.httpStatusCode = 404
+            error.message = "We dont have any data!"
+            next(error)
         }
-    } else {
-        const error = new Error()
-        error.httpStatusCode = 404
-        error.message = "We dont have any data!"
+    } catch (error) {
         next(error)
     }
 })

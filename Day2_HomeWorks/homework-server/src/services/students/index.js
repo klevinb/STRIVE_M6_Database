@@ -3,7 +3,7 @@ const fs = require("fs-extra")
 const path = require("path")
 const uniqid = require("uniqid")
 const multer = require("multer")
-const portfolios = require("../portfolio/portfolios.json")
+const ProjectsSchema = require("../portfolio/schema")
 const StudentSchema = require("./schema")
 const { find } = require("./schema")
 
@@ -29,10 +29,14 @@ router.get("/", async (req, res, next) => {
     }
 })
 
-router.get("/:id/projects", (req, res) => {
-    const studentProjects = portfolios.filter(project => project.studentId === req.params.id)
+router.get("/:id/projects", async (req, res, next) => {
+    try {
+        const projects = await ProjectsSchema.find({ studentId: req.params.id })
+        res.send(projects)
+    } catch (error) {
+        next(error)
+    }
 
-    res.send(studentProjects)
 })
 
 router.get("/:id", async (req, res, next) => {
@@ -68,7 +72,7 @@ router.post("/", async (req, res) => {
     try {
         const newStudent = new StudentSchema(req.body)
         const { _id } = await newStudent.save()
-        res.status(201).send("Created")
+        res.status(201).send(newStudent)
     } catch (error) {
         next(error)
     }

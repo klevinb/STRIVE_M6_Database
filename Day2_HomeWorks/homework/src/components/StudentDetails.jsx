@@ -82,11 +82,15 @@ class StudentDetails extends Component {
     fetchUser = async () => {
         let resp = await fetch("http://127.0.0.1:3003/students/" + this.props.match.params.id)
         let data = await resp.json()
+        if (resp.ok) {
+            this.setState({
+                user: data
+            });
+        }
         let resp2 = await fetch("http://127.0.0.1:3003/students/" + this.props.match.params.id + "/getPhoto")
         let userImg = resp2.url
-        if (resp.ok && resp2.ok) {
+        if (resp2.ok) {
             this.setState({
-                user: data[0],
                 userImg
             });
         }

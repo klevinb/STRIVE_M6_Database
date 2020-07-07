@@ -132,11 +132,10 @@ class App extends Component {
         "Content-Type": "application/json"
       }
     })
-    console.log(resp)
 
     const studentId = await resp.json()
 
-    const resp2 = await fetch("http://127.0.0.1:3003/students/" + studentId[studentId.length - 1].id + "/uploadPhoto", {
+    const resp2 = await fetch("http://127.0.0.1:3003/students/" + studentId._id + "/uploadPhoto", {
       method: "POST",
       body: data,
     })
@@ -173,7 +172,13 @@ class App extends Component {
     if (resp.ok) {
       this.fetchData()
       this.setState({
-        editStudent: false
+        editStudent: false,
+        newStudent: {
+          name: "",
+          surname: "",
+          email: "",
+          date: ""
+        },
       });
     }
 
@@ -307,7 +312,10 @@ class App extends Component {
 
                         <div className="d-flex justify-content-center mt-3">
                           {this.state.postButton ?
-                            <Button variant="primary" type="submit">
+                            <Button
+                              variant="primary"
+                              type="submit"
+                            >
                               POST
                             </Button>
                             :
