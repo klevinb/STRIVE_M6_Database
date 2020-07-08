@@ -256,7 +256,7 @@ class App extends Component {
       <div className="App">
         <Container className="d-flex justify-content-center mt-5">
           <div className="d-flex flex-column">
-            <Row md={3}>
+            <Row xs={1} sm={2} md={3} className="d-flex justify-content-between">
               <StudentInfo
                 props={this.props}
                 fetchUser={this.fetchUser}
