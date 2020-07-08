@@ -50,15 +50,6 @@ class App extends Component {
     }
   }
 
-  getStudentPhoto = async (id) => {
-    const resp = await fetch("http://127.0.0.1:3003/students/" + id + "/getPhoto")
-    if (resp.ok) {
-      this.setState({
-        photo: resp.url,
-        showModal: true
-      });
-    }
-  }
   saveImg = (e) => {
     this.setState({
       photo: e.target.files[0]
@@ -196,6 +187,9 @@ class App extends Component {
 
   editStudent = async (e) => {
     e.preventDefault()
+    const data = new FormData()
+    data.append("profile", this.state.photo)
+
     const resp = await fetch("http://127.0.0.1:3003/students/" + this.state.newStudent._id, {
       method: "PUT",
       body: JSON.stringify(this.state.newStudent),
@@ -203,7 +197,12 @@ class App extends Component {
         "Content-Type": "application/json"
       }
     })
-    if (resp.ok) {
+
+    const resp2 = await fetch("http://127.0.0.1:3003/students/" + this.state.newStudent._id + "/uploadPhoto", {
+      method: "POST",
+      body: data,
+    })
+    if (resp2.ok) {
       this.fetchData(this.state.limit, this.state.offset)
       this.setState({
         editStudent: false,
@@ -444,6 +443,14 @@ class App extends Component {
                         onChange={this.handleChange}
                         type="date" />
                     </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <input type="file"
+                      name="file"
+                      onChange={this.saveImg}
+                      accept="image/png, image/jpeg" />
                   </Col>
                 </Row>
 

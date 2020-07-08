@@ -65,9 +65,21 @@ router.get("/:id", async (req, res, next) => {
     }
 })
 
-router.get("/:id/getPhoto", (req, res) => {
-    const source = fs.createReadStream(path.join(usersImagePath, `${req.params.id}.png`))
-    source.pipe(res)
+router.get("/:id/getPhoto", (req, res, next) => {
+    try {
+        if (fs.existsSync(path.join(usersImagePath, `${req.params.id}.png`))) {
+            const source = fs.createReadStream(path.join(usersImagePath, `${req.params.id}.png`))
+            source.pipe(res)
+        } else {
+            const err = new Error()
+            err.httpStatusCode = 404
+            err.message = "Not found!"
+            next(err)
+        }
+
+    } catch (error) {
+        next(error)
+    }
 })
 router.get("/:id/download", (req, res) => {
     const source = fs.createReadStream(path.join(usersImagePath, `${req.params.id}.png`))
