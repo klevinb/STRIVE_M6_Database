@@ -22,6 +22,10 @@ const StudentSchema = new Schema(
         },
         numberOfProjects: {
             type: Number,
+        },
+        professions: {
+            type: Array,
+            required: true
         }
     }
 )

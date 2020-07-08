@@ -71,7 +71,7 @@ router.get("/:id/download", (req, res) => {
 router.post("/", async (req, res) => {
     try {
         const newStudent = new StudentSchema(req.body)
-        const { _id } = await newStudent.save()
+        const response = await newStudent.save()
         res.status(201).send(newStudent)
     } catch (error) {
         next(error)
