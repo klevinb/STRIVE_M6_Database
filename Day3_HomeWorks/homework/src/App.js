@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {
   Container,
   Accordion,
+  Pagination,
   Card,
   Button,
   Modal,
@@ -11,7 +12,7 @@ import {
   Alert,
   Image
 } from 'react-bootstrap'
-import Table from './components/Table'
+import StudentInfo from './components/StudentInfo'
 import './App.css';
 
 class App extends Component {
@@ -22,6 +23,10 @@ class App extends Component {
     postButton: true,
     showModal: false,
     students: [],
+    limit: 3,
+    offset: 0,
+    items: [],
+    nrOfStudents: "",
     photo: '',
     newStudent: {
       name: "",
@@ -31,13 +36,14 @@ class App extends Component {
     }
   }
 
-  fetchData = async () => {
-    const response = await fetch("http://127.0.0.1:3003/students")
+  fetchData = async (limit, offset) => {
+    const response = await fetch("http://127.0.0.1:3003/students?limit=" + limit + "&offset=" + offset)
 
     if (response.ok) {
-      const students = await response.json()
+      const studentsData = await response.json()
       this.setState({
-        students
+        students: studentsData.students,
+        nrOfStudents: studentsData.nrOfStudents,
       });
     } else {
       alert("Something went wrong!")
@@ -76,8 +82,36 @@ class App extends Component {
 
   }
 
+  pagination = () => {
+    let items = [];
+    let roundNr
+
+    if (this.state.nrOfStudents % this.state.limit === 0) {
+      roundNr = (Math.floor(this.state.nrOfStudents / this.state.limit))
+    } else {
+      roundNr = (Math.floor(this.state.nrOfStudents / this.state.limit)) + 1
+    }
+
+    for (let number = 1; number <= roundNr; number++) {
+      items.push(
+        <Pagination.Item key={number} onClick={(e) => this.setState({
+          offset: this.state.limit * (number - 1),
+          selectedPage: number
+        })}>
+          {number}
+        </Pagination.Item>,
+      );
+    }
+    this.setState({
+      items
+    })
+  }
+
   componentDidMount = async () => {
-    this.fetchData()
+    this.fetchData(
+      this.state.limit,
+      this.state.offset
+    )
   }
 
   fetchStudentData = async (id) => {
@@ -156,7 +190,7 @@ class App extends Component {
       });
     }
 
-    this.fetchData()
+    this.fetchData(this.state.limit, this.state.offset)
 
   }
 
@@ -170,7 +204,7 @@ class App extends Component {
       }
     })
     if (resp.ok) {
-      this.fetchData()
+      this.fetchData(this.state.limit, this.state.offset)
       this.setState({
         editStudent: false,
         newStudent: {
@@ -189,14 +223,13 @@ class App extends Component {
       method: "DELETE"
     })
     if (resp.ok) {
-      this.fetchData()
+      this.fetchData(this.state.limit, this.state.offset)
     } else {
       this.setState({
         adminMessage: true
       });
     }
   }
-
 
   handleChange = (e) => {
     const newStudent = this.state.newStudent
@@ -207,213 +240,231 @@ class App extends Component {
     this.checkEmail()
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    if (prevState.offset !== this.state.offset) {
+      this.fetchData(this.state.limit, this.state.offset)
+    } else if (
+      prevState.nrOfStudents !== this.state.nrOfStudents
+    ) {
+      this.pagination()
+    }
+  }
+
 
   render() {
 
     return (
       <div className="App">
-        <Container className="d-flex justify-content-center">
-          <Accordion className="mt-5">
-            <Card>
-              <Card.Header className="d-flex justify-content-center">
-                <Accordion.Toggle as={Button} variant="link" eventKey="1">
-                  Show Students
-                </Accordion.Toggle>
-              </Card.Header>
-              <Accordion.Collapse eventKey="1">
+        <Container className="d-flex justify-content-center mt-5">
+          <div className="d-flex flex-column">
+            <Row md={3}>
+              <StudentInfo
+                props={this.props}
+                fetchUser={this.fetchUser}
+                students={this.state.students}
+                getStudentPhoto={this.getStudentPhoto}
+                fetchStudentData={this.fetchStudentData}
+                deleteStudent={this.deleteStudent}
+              />
+            </Row>
+            <div className="d-flex justify-content-center">
+              <Pagination>{this.state.items.map((item, index) =>
                 <>
-                  <Card.Body>
-                    <Table
-                      props={this.props}
-                      fetchUser={this.fetchUser}
-                      students={this.state.students}
-                      getStudentPhoto={this.getStudentPhoto}
-                      fetchStudentData={this.fetchStudentData}
-                      deleteStudent={this.deleteStudent}
-                    />
-                  </Card.Body>
-                  <Card.Footer className="d-flex justify-content-center">
-                    <Button variant="success" onClick={() => this.setState({ addStudent: !this.state.addStudent })}>Add Student</Button>
-                  </Card.Footer>
-                  <Modal show={this.state.addStudent} onHide={() => this.setState({
-                    addStudent: false,
-                    editStudent: false,
-                    postButton: true,
-                    newStudent: {
-                      name: "",
-                      surname: "",
-                      email: "",
-                      date: ""
-                    }
-                  }
-
-                  )}>
-                    <Modal.Header closeButton>
-                      <Modal.Title className="text-center">Add a new Student</Modal.Title>
-                    </Modal.Header>
-
-                    <Modal.Footer className="d-flex justify-content-center">
-                      <Form onSubmit={this.addNewStudent}>
-                        <Row>
-                          <Col>
-                            <Form.Group controlId="name">
-                              <Form.Label>Name</Form.Label>
-                              <Form.Control
-                                value={this.state.newStudent.name}
-                                onChange={this.handleChange}
-                                type="text"
-                                placeholder="Write your name" />
-                            </Form.Group>
-                          </Col>
-                          <Col>
-                            <Form.Group controlId="surname">
-                              <Form.Label>Surname</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={this.state.newStudent.surname}
-                                onChange={this.handleChange}
-                                placeholder="Write your surname" />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-
-                        <Row>
-                          <Col>
-                            <Form.Group controlId="email">
-                              <Form.Label>Email address</Form.Label>
-                              <Form.Control
-                                type="email"
-                                value={this.state.newStudent.email}
-                                onChange={this.handleChange}
-                                placeholder="Enter email" />
-                              <Form.Text className="text-muted">
-                                We'll never share your email with anyone else.
-                          </Form.Text>
-                            </Form.Group>
-                          </Col>
-                          <Col>
-                            <Form.Group controlId="date">
-                              <Form.Label>Birthday</Form.Label>
-                              <Form.Control
-                                value={this.state.newStudent.date}
-                                onChange={this.handleChange}
-                                type="date" />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-                        <Row>
-                          <Col>
-                            <input type="file"
-                              name="file"
-                              onChange={this.saveImg}
-                              accept="image/png, image/jpeg" />
-                          </Col>
-                        </Row>
-
-                        <div className="d-flex justify-content-center mt-3">
-                          {this.state.postButton ?
-                            <Button
-                              variant="primary"
-                              type="submit"
-                            >
-                              POST
-                            </Button>
-                            :
-                            <Alert variant="danger">
-                              Try another email because another users is using this one!
-                            </Alert>
-
-                          }
-                        </div>
-
-                      </Form>
-                    </Modal.Footer>
-                  </Modal>
-                  <Modal show={this.state.editStudent} onHide={() => this.setState({
-                    addStudent: false,
-                    editStudent: false,
-                    postButton: true,
-                    newStudent: {
-                      name: "",
-                      surname: "",
-                      email: "",
-                      date: ""
-                    }
-                  })}>
-                    <Modal.Header closeButton>
-                      <Modal.Title className="text-center">Edit the Student info</Modal.Title>
-                    </Modal.Header>
-
-                    <Modal.Footer className="d-flex justify-content-center">
-                      <Form onSubmit={this.editStudent}>
-                        <Row>
-                          <Col>
-                            <Form.Group controlId="name">
-                              <Form.Label>Name</Form.Label>
-                              <Form.Control
-                                value={this.state.newStudent.name}
-                                onChange={this.handleChange}
-                                type="text"
-                                placeholder="Write your name" />
-                            </Form.Group>
-                          </Col>
-                          <Col>
-                            <Form.Group controlId="surname">
-                              <Form.Label>Surname</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={this.state.newStudent.surname}
-                                onChange={this.handleChange}
-                                placeholder="Write your surname" />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-
-                        <Row>
-                          <Col>
-                            <Form.Group controlId="email">
-                              <Form.Label>Email address</Form.Label>
-                              <Form.Control
-                                type="email"
-                                value={this.state.newStudent.email}
-                                onChange={this.handleChange}
-                                placeholder="Enter email" />
-                              <Form.Text className="text-muted">
-                                We'll never share your email with anyone else.
-                          </Form.Text>
-                            </Form.Group>
-                          </Col>
-                          <Col>
-                            <Form.Group controlId="date">
-                              <Form.Label>Birthday</Form.Label>
-                              <Form.Control
-                                value={this.state.newStudent.date}
-                                onChange={this.handleChange}
-                                type="date" />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-
-                        <div className="d-flex justify-content-center">
-                          {this.state.postButton ?
-                            <Button variant="primary" type="submit">
-                              EDIT
-                            </Button>
-                            :
-                            <Alert variant="danger">
-                              Try another email because another users is using this one!
-                            </Alert>
-
-                          }
-                        </div>
-
-                      </Form>
-                    </Modal.Footer>
-                  </Modal>
+                  <div key={index}>{item}</div>
                 </>
-              </Accordion.Collapse>
-            </Card>
-          </Accordion>
+              )}</Pagination>
+            </div>
+            <div style={{
+              position: "absolute",
+              top: "5%",
+              right: "5%"
+            }}>
+              <Button
+                variant="success"
+                onClick={() => this.setState({ addStudent: !this.state.addStudent })}
+              >Add Student</Button>
+            </div>
+
+          </div>
+
+
+          <Modal show={this.state.addStudent} onHide={() => this.setState({
+            addStudent: false,
+            editStudent: false,
+            postButton: true,
+            newStudent: {
+              name: "",
+              surname: "",
+              email: "",
+              date: ""
+            }
+          }
+
+          )}>
+            <Modal.Header closeButton>
+              <Modal.Title className="text-center">Add a new Student</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Footer className="d-flex justify-content-center">
+              <Form onSubmit={this.addNewStudent}>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="name">
+                      <Form.Label>Name</Form.Label>
+                      <Form.Control
+                        value={this.state.newStudent.name}
+                        onChange={this.handleChange}
+                        type="text"
+                        placeholder="Write your name" />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="surname">
+                      <Form.Label>Surname</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={this.state.newStudent.surname}
+                        onChange={this.handleChange}
+                        placeholder="Write your surname" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col>
+                    <Form.Group controlId="email">
+                      <Form.Label>Email address</Form.Label>
+                      <Form.Control
+                        type="email"
+                        value={this.state.newStudent.email}
+                        onChange={this.handleChange}
+                        placeholder="Enter email" />
+                      <Form.Text className="text-muted">
+                        We'll never share your email with anyone else.
+                          </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="date">
+                      <Form.Label>Birthday</Form.Label>
+                      <Form.Control
+                        value={this.state.newStudent.date}
+                        onChange={this.handleChange}
+                        type="date" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col>
+                    <input type="file"
+                      name="file"
+                      onChange={this.saveImg}
+                      accept="image/png, image/jpeg" />
+                  </Col>
+                </Row>
+
+                <div className="d-flex justify-content-center mt-3">
+                  {this.state.postButton ?
+                    <Button
+                      variant="primary"
+                      type="submit"
+                    >
+                      POST
+                            </Button>
+                    :
+                    <Alert variant="danger">
+                      Try another email because another user is using this one!
+                            </Alert>
+
+                  }
+                </div>
+
+              </Form>
+            </Modal.Footer>
+          </Modal>
+          <Modal show={this.state.editStudent} onHide={() => this.setState({
+            addStudent: false,
+            editStudent: false,
+            postButton: true,
+            newStudent: {
+              name: "",
+              surname: "",
+              email: "",
+              date: ""
+            }
+          })}>
+            <Modal.Header closeButton>
+              <Modal.Title className="text-center">Edit the Student info</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Footer className="d-flex justify-content-center">
+              <Form onSubmit={this.editStudent}>
+                <Row>
+                  <Col>
+                    <Form.Group controlId="name">
+                      <Form.Label>Name</Form.Label>
+                      <Form.Control
+                        value={this.state.newStudent.name}
+                        onChange={this.handleChange}
+                        type="text"
+                        placeholder="Write your name" />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="surname">
+                      <Form.Label>Surname</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={this.state.newStudent.surname}
+                        onChange={this.handleChange}
+                        placeholder="Write your surname" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col>
+                    <Form.Group controlId="email">
+                      <Form.Label>Email address</Form.Label>
+                      <Form.Control
+                        type="email"
+                        value={this.state.newStudent.email}
+                        onChange={this.handleChange}
+                        placeholder="Enter email" />
+                      <Form.Text className="text-muted">
+                        We'll never share your email with anyone else.
+                          </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="date">
+                      <Form.Label>Birthday</Form.Label>
+                      <Form.Control
+                        value={this.state.newStudent.date}
+                        onChange={this.handleChange}
+                        type="date" />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <div className="d-flex justify-content-center">
+                  {this.state.postButton ?
+                    <Button variant="primary" type="submit">
+                      EDIT
+                            </Button>
+                    :
+                    <Alert variant="danger">
+                      Try another email because another users is using this one!
+                            </Alert>
+
+                  }
+                </div>
+
+              </Form>
+            </Modal.Footer>
+          </Modal>
+
+
           <Modal show={this.state.showModal} onHide={() => {
             this.setState({
               showModal: false,

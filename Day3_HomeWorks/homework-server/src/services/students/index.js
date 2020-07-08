@@ -6,6 +6,7 @@ const multer = require("multer")
 const ProjectsSchema = require("../portfolio/schema")
 const StudentSchema = require("./schema")
 const { find } = require("./schema")
+const q2m = require("query-to-mongo")
 
 const router = express.Router()
 
@@ -15,9 +16,18 @@ const usersImagePath = path.join(__dirname, "../../public/img/users")
 
 router.get("/", async (req, res, next) => {
     try {
-        const students = await StudentSchema.find(req.query)
+        const query = q2m(req.query)
+        const count = await StudentSchema.countDocuments()
+        const students = await StudentSchema
+            .find(query.criteria)
+            .sort(query.options.sort)
+            .limit(query.options.limit)
+            .skip(query.options.skip)
         if (students) {
-            res.send(students)
+            res.status(200).send({
+                nrOfStudents: count,
+                students
+            })
         } else {
             const error = new Error()
             error.httpStatusCode = 404
@@ -68,7 +78,7 @@ router.get("/:id/download", (req, res) => {
     source.pipe(res)
 })
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
     try {
         const newStudent = new StudentSchema(req.body)
         const response = await newStudent.save()
@@ -82,10 +92,10 @@ router.post("/", async (req, res) => {
 router.post("/:id/uploadPhoto", upload.single("profile"), async (req, res, next) => {
     try {
         await fs.writeFile(path.join(usersImagePath, `${req.params.id}.png`), req.file.buffer)
+        res.status(201).send("OK")
     } catch (error) {
         next(error)
     }
-    res.status(201).send("OK")
 })
 
 router.post("/checkEmail", async (req, res, next) => {
