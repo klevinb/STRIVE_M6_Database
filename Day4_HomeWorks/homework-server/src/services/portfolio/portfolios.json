@@ -1,0 +1,38 @@
+[
+    {
+        "id": "au6a11wkbtoi43c",
+        "name": "New project",
+        "description": "project description",
+        "repoUrl": "www.project.com",
+        "liveUrl": "www.project.com",
+        "studentId": "admin",
+        "createdAt": "2020-06-24T18:16:02.615Z"
+    },
+    {
+        "id": "au6aa64kbuwsg0v",
+        "name": "Another Porject",
+        "description": "I worked all my summer for this project",
+        "repoUrl": "www.project2.com",
+        "liveUrl": "www.project2.com",
+        "studentId": "admin",
+        "createdAt": "2020-06-25T14:55:47.742Z"
+    },
+    {
+        "id": "au6a9r4kbv8atlb",
+        "name": "Eriseld first project",
+        "description": "project description",
+        "repoUrl": "www.link.com",
+        "liveUrl": "www.link.com",
+        "studentId": "au6a9v0kbuv81xm",
+        "createdAt": "2020-06-25T20:18:00.910Z"
+    },
+    {
+        "id": "au6a39ckbuviajp",
+        "name": "Google project",
+        "description": "I built google from scratch",
+        "repoUrl": "www.google.com",
+        "liveUrl": "www.google.com",
+        "studentId": "au6aapskbuuqjfe",
+        "createdAt": "2020-06-25T14:19:54.468Z"
+    }
+]
