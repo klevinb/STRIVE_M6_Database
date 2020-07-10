@@ -223,7 +223,6 @@ router.get("/calculate/sumTwoPrices", async (req, res, next) => {
             })
 
             const xmlRespons = await response.data
-            console.log(response)
             const result = xml2js(xmlRespons, { compact: true })
             const total = result["soap:Envelope"]["soap:Body"].AddResponse.AddResult._text
             res.status(200).send(`You selected two products 
@@ -265,8 +264,6 @@ router.get("/:id/exportToPDF", async (req, res, next) => {
                     `             Category: ${findProduct.category}`,
                 ]
             }
-            console.log(docDefinition)
-
             var pdfDoc = printer.createPdfKitDocument(docDefinition);
             res.setHeader("Content-Disposition", `attachment; filename=${findProduct._id}.pdf`)
             //saves file to the disk
