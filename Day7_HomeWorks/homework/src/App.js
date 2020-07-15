@@ -256,7 +256,7 @@ class App extends Component {
 
   render() {
     return (
-      <div className='App'>
+      <div className='App mt-4'>
         <Container className='d-flex justify-content-center mt-5'>
           <div className='d-flex flex-column'>
             <Row
@@ -286,7 +286,7 @@ class App extends Component {
             <div
               style={{
                 position: "absolute",
-                top: "5%",
+                top: "15%",
                 right: "5%",
               }}
             >
@@ -487,7 +487,7 @@ class App extends Component {
                   </Col>
                 </Row>
 
-                <div className='d-flex justify-content-center'>
+                <div className='d-flex justify-content-center mt-3'>
                   {this.state.postButton ? (
                     <Button variant='primary' type='submit'>
                       EDIT
