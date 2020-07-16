@@ -7,6 +7,9 @@ const multer = require("multer");
 const router = express.Router();
 const upload = multer();
 
+const { Op } = require("sequelize");
+const Project = require("../../model/projects");
+
 const reviewsFilePath = path.join(__dirname, "reviews.json");
 const projectsImagePath = path.join(__dirname, "../../public/img/projects");
 
@@ -18,9 +21,8 @@ const getReviews = () => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const query = "SELECT * FROM projects";
-    const projects = await db.query(query);
-    res.send(projects.rows);
+    const projects = await Project.findAll();
+    res.send(projects);
   } catch (error) {
     next(error);
   }
@@ -28,12 +30,14 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const project = await db.query(
-      "SELECT * FROM projects WHERE projectid = $1",
-      [req.params.id]
-    );
-    if (project.rowCount === 0) return res.status(404).send("Not Found!");
-    res.status(200).send(project.rows[0]);
+    const project = await Project.findOne({
+      where: {
+        projectid: req.params.id,
+      },
+    });
+
+    if (project) res.send(project);
+    else res.status(404).send("Not found");
   } catch (error) {
     console.log(error);
     next(error);
@@ -79,21 +83,8 @@ router.get("/:id/download", (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const addProject = await db.query(
-      `INSERT INTO projects (projectid,name,description,repourl,liveurl,studentid)
-      Values ($1,$2,$3,$4,$5,$6)
-      RETURNING *
-      `,
-      [
-        uniqid(),
-        req.body.name,
-        req.body.description,
-        req.body.repourl,
-        req.body.liveurl,
-        req.body.studentid,
-      ]
-    );
-    res.status(201).send(addProject.rows[0]);
+    const project = await Project.create({ projectid: uniqid(), ...req.body });
+    res.send(project);
   } catch (error) {
     next(error);
   }
@@ -142,25 +133,17 @@ router.post(
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let params = [];
-    let query = "UPDATE projects SET";
-    for (bodyElement in req.body) {
-      query += `${params.length > 0 ? "," : ""} "${bodyElement}"= $${
-        params.length + 1
-      }`;
-      params.push(req.body[bodyElement]);
-    }
-    params.push(req.params.id);
-    query += ` WHERE projectid = $${params.length}
-    RETURNING *
-    `;
-    console.log(query);
-    const editProject = await db.query(query, params);
-    if (editProject.rowCount === 0) {
-      res.status(404).send("Not Found");
-    } else {
-      res.status(200).send(editProject.rows[0]);
-    }
+    const project = await Project.update(
+      {
+        ...req.body,
+      },
+      {
+        where: { projectid: req.params.id },
+      }
+    );
+
+    if (project[0] === 1) res.send("OK");
+    else res.status(404).send("Not found");
   } catch (error) {
     next(error);
   }
@@ -168,11 +151,14 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const deletedStudent = await db.query(
-      `DELETE FROM projects WHERE projectid = '${req.params.id}'`
-    );
-    if (deletedStudent.rowCount === 0) return res.status(404).send("Not Found");
-    res.status(200).status("Deleted");
+    const result = await Project.destroy({
+      where: {
+        projectid: req.params.id,
+      },
+    });
+
+    if (result === 1) res.send("DELETED");
+    else res.status(404).send("Not Found");
   } catch (error) {
     next(error);
   }

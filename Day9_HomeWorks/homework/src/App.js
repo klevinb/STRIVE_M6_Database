@@ -24,7 +24,7 @@ class App extends Component {
     postButton: true,
     showModal: false,
     students: [],
-    limit: 6,
+    limit: 2,
     offset: 0,
     items: [],
     nrOfStudents: "",
@@ -44,8 +44,9 @@ class App extends Component {
 
     if (response.ok) {
       const studentsData = await response.json();
+      console.log(studentsData);
       this.setState({
-        students: studentsData,
+        students: studentsData.students,
         nrOfStudents: studentsData.nrOfStudents,
       });
     } else {
@@ -92,7 +93,6 @@ class App extends Component {
           onClick={(e) =>
             this.setState({
               offset: this.state.limit * (number - 1),
-              selectedPage: number,
             })
           }
         >
@@ -106,7 +106,8 @@ class App extends Component {
   };
 
   componentDidMount = async () => {
-    this.fetchData(this.state.limit, this.state.offset);
+    await this.fetchData(this.state.limit, this.state.offset);
+    await this.pagination();
   };
 
   fetchStudentData = async (id) => {

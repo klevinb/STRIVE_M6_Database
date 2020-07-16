@@ -90,6 +90,7 @@ class StudentDetails extends Component {
     if (resp.ok) {
       this.setState({
         user: data,
+        projects: data.projects,
       });
     }
     let resp2 = await fetch(
@@ -114,7 +115,7 @@ class StudentDetails extends Component {
   };
 
   componentDidMount = () => {
-    this.fetchData();
+    // this.fetchData();
     this.fetchUser();
   };
 
@@ -179,7 +180,7 @@ class StudentDetails extends Component {
         },
       });
       setTimeout(() => {
-        this.fetchData();
+        this.fetchUser();
       }, 500);
     }
   };
@@ -189,7 +190,7 @@ class StudentDetails extends Component {
       method: "DELETE",
     });
     setTimeout(() => {
-      this.fetchData();
+      this.fetchUser();
     }, 500);
   };
 
@@ -230,7 +231,7 @@ class StudentDetails extends Component {
         },
       });
       setTimeout(() => {
-        this.fetchData();
+        this.fetchUser();
       }, 500);
     }
   };

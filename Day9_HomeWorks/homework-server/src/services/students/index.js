@@ -5,11 +5,9 @@ const uniqid = require("uniqid");
 const multer = require("multer");
 const q2m = require("query-to-mongo");
 
-const { Op, QueryTypes, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 const Student = require("../../model/students");
 const Project = require("../../model/projects");
-
-const sequelize = require("../../db");
 
 const router = express.Router();
 
@@ -19,22 +17,28 @@ const usersImagePath = path.join(__dirname, "../../public/img/users");
 
 router.get("/", async (req, res, next) => {
   try {
-    const students = await Student.findAll({
-      include: Project,
-    });
-    res.send(students);
-  } catch (error) {
-    next(error);
-  }
-});
+    const limit = req.query.limit || 10;
+    const offset = req.query.offset || 0;
+    const order = req.query.order || "asc";
 
-router.get("/:id/projects", async (req, res, next) => {
-  try {
-    const projects = await db.query(
-      `SELECT * FROM projects
-    WHERE studentid = '${req.params.id}'`
-    );
-    res.send(projects.rows);
+    delete req.query.limit;
+    delete req.query.offset;
+    delete req.query.order;
+    await Student.findAndCountAll({
+      where: {
+        ...req.query,
+      },
+      offset: offset,
+      limit: limit,
+      include: Project,
+    }).then((result) => {
+      if (result.count === 0) res.status(404).send("not found!");
+      else
+        res.send({
+          nrOfStudents: result.count,
+          students: result.rows,
+        });
+    });
   } catch (error) {
     next(error);
   }
@@ -42,12 +46,15 @@ router.get("/:id/projects", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const student = await db.query(
-      "SELECT * FROM students WHERE studentid = $1",
-      [req.params.id]
-    );
-    if (student.rowCount === 0) return res.status(404).send("Not Found!");
-    res.status(200).send(student.rows[0]);
+    const student = await Student.findOne({
+      where: {
+        studentid: req.params.id,
+      },
+      include: Project,
+    });
+
+    if (student) res.send(student);
+    else res.status(404).send("Not found");
   } catch (error) {
     console.log(error);
     next(error);
@@ -91,20 +98,8 @@ router.get("/:id/download", (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const addStudent = await db.query(
-      `INSERT INTO students (studentid,name,surname,email,birthday)
-      Values ($1,$2,$3,$4,$5)
-      RETURNING *
-      `,
-      [
-        uniqid(),
-        req.body.name,
-        req.body.surname,
-        req.body.email,
-        req.body.birthday,
-      ]
-    );
-    res.status(201).send(addStudent.rows[0]);
+    const student = await Student.create({ studentid: uniqid(), ...req.body });
+    res.send(student);
   } catch (error) {
     next(error);
   }
@@ -135,14 +130,24 @@ router.post(
 
 router.post("/checkEmail", async (req, res, next) => {
   try {
-    const checkEmail = await db.query(
-      `SELECT * FROM students WHERE email ='${req.body.email}' AND studentid != '${req.body.studentid}'`
-    );
-    if (checkEmail.rowCount === 0) {
-      res.status(200).send(true);
-    } else {
-      res.status(400).send(false);
-    }
+    const checkEmail = await Student.findOne({
+      where: {
+        [Op.and]: [
+          {
+            email: {
+              [Op.eq]: `${req.body.email}`,
+            },
+            studentid: {
+              [Op.ne]: `${req.body.studentid}`,
+            },
+          },
+        ],
+      },
+    });
+
+    console.log(checkEmail);
+    if (checkEmail === null) res.status(200).send(true);
+    else res.status(400).send(false);
   } catch (error) {
     next(error);
   }
@@ -150,24 +155,17 @@ router.post("/checkEmail", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let params = [];
-    let query = "UPDATE students SET";
-    for (bodyElement in req.body) {
-      query += `${params.length > 0 ? "," : ""} "${bodyElement}"= $${
-        params.length + 1
-      }`;
-      params.push(req.body[bodyElement]);
-    }
-    params.push(req.params.id);
-    query += ` WHERE studentid = $${params.length}
-    RETURNING *
-    `;
-    const editStudent = await db.query(query, params);
-    if (editStudent.rowCount === 0) {
-      res.status(404).send("Not Found");
-    } else {
-      res.status(200).send(editStudent.rows[0].StudentID);
-    }
+    const student = await Student.update(
+      {
+        ...req.body,
+      },
+      {
+        where: { studentid: req.params.id },
+      }
+    );
+
+    if (student[0] === 1) res.send("OK");
+    else res.status(404).send("Not found");
   } catch (error) {
     next(error);
   }
@@ -175,14 +173,14 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const deletedStudent = await db.query(
-      `DELETE FROM students WHERE studentid = '${req.params.id}'`
-    );
-    if (deletedStudent.rowCount === 0) {
-      res.status(404).send("Not Found");
-    } else {
-      res.status(200).send("Deleted");
-    }
+    const result = await Student.destroy({
+      where: {
+        studentid: req.params.id,
+      },
+    });
+
+    if (result === 1) res.send("DELETED");
+    else res.status(404).send("Not Found");
   } catch (error) {
     next(error);
   }
