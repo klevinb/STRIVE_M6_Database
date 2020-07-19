@@ -40,7 +40,11 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const findProduct = await db.query(
-      `SELECT *, products._id As _id, products."createdAt" As productcreation, reviews._id As reviewid, reviews."createdAt" as reviewscreation FROM products LEFT JOIN reviews ON reviews.productid = $1 WHERE products._id = $1`,
+      `SELECT *, products._id As _id, 
+      products."createdAt" As productcreation, reviews._id As reviewid,
+       reviews."createdAt" as reviewscreation
+        FROM products LEFT JOIN 
+        reviews ON reviews.productid = $1 WHERE products._id = $1`,
       [req.params.id]
     );
 
