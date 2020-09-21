@@ -1,29 +1,29 @@
-const express = require("express");
-const fs = require("fs-extra");
-const path = require("path");
-const uniqid = require("uniqid");
-const multer = require("multer");
-const { xml2js } = require("xml-js");
-const { begin } = require("xmlbuilder");
-const axios = require("axios");
-const PdfPrinter = require("pdfmake");
-const pump = require("pump");
-const { Transform } = require("json2csv");
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
-const q2m = require("query-to-mongo");
+const express = require('express');
+const fs = require('fs-extra');
+const path = require('path');
+const uniqid = require('uniqid');
+const multer = require('multer');
+const { xml2js } = require('xml-js');
+const { begin } = require('xmlbuilder');
+const axios = require('axios');
+const PdfPrinter = require('pdfmake');
+const pump = require('pump');
+const { Transform } = require('json2csv');
+const mongoose = require('mongoose');
+const q2m = require('query-to-mongo');
 
 const router = express.Router();
 const upload = multer();
 const port = process.env.PORT || 3003;
 
-const ReviewsModel = require("../reviews/schema");
-const ProductModel = require("./schema");
-const { find } = require("./schema");
-const ReviewModel = require("../reviews/schema");
+const ReviewsModel = require('../reviews/schema');
+const ProductModel = require('./schema');
+const { find } = require('./schema');
+const ReviewModel = require('../reviews/schema');
 
-const imagePath = path.join(__dirname, "../../public/img/products");
-const pdfSaverPath = path.join(__dirname, "../../public/pdf");
+const imagePath = path.join(__dirname, '../../public/img/products');
+const pdfSaverPath = path.join(__dirname, '../../public/pdf');
+const productsPath = path.join(__dirname, '../../public/products');
 
 const getProductPrice = async (id) => {
   const product = await ProductModel.findById(id);
@@ -34,11 +34,11 @@ const getProductPrice = async (id) => {
     };
   } else {
     const err = new Error();
-    err.message = "No product with that ID";
+    err.message = 'No product with that ID';
     console.log(err);
   }
 };
-router.get("/", async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const query = q2m(req.query);
     const count = await ProductModel.countDocuments(query.criteria);
@@ -46,7 +46,7 @@ router.get("/", async (req, res, next) => {
       .sort(query.options.sort)
       .limit(query.options.limit)
       .skip(query.options.skip)
-      .populate("reviews");
+      .populate('reviews');
     res.status(200).send({
       products,
       nrOfProducts: count,
@@ -55,10 +55,10 @@ router.get("/", async (req, res, next) => {
     next(error);
   }
 });
-router.get("/:id", async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const product = await ProductModel.findById(req.params.id).populate(
-      "reviews"
+      'reviews'
     );
     if (product) {
       res.status(200).send(product);
@@ -68,7 +68,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const newProduct = {
       ...req.body,
@@ -83,7 +83,7 @@ router.post("/", async (req, res, next) => {
     next(error);
   }
 });
-router.post("/:id/upload", upload.single("product"), async (req, res, next) => {
+router.post('/:id/upload', upload.single('product'), async (req, res, next) => {
   try {
     if (req.file) {
       await fs.writeFile(
@@ -94,18 +94,18 @@ router.post("/:id/upload", upload.single("product"), async (req, res, next) => {
       const product = await ProductModel.findByIdAndUpdate(req.params.id, {
         imageUrl: `http://127.0.0.1:3005/img/products/${req.params.id}.png`,
       });
-      res.status(200).send("Done");
+      res.status(200).send('Done');
     } else {
       const err = new Error();
       err.httpStatusCode = 400;
-      err.message = "Image file missing!";
+      err.message = 'Image file missing!';
       next(err);
     }
   } catch (error) {
     next(error);
   }
 });
-router.put("/:id", async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const findProduct = await ProductModel.findById(req.params.id);
     if (findProduct) {
@@ -118,7 +118,7 @@ router.put("/:id", async (req, res, next) => {
       res.status(200).send(addedProduct);
     } else {
       const err = new Error();
-      err.message = "We dont have products with that ID!";
+      err.message = 'We dont have products with that ID!';
       err.httpStatusCode = 404;
       next(err);
     }
@@ -126,7 +126,7 @@ router.put("/:id", async (req, res, next) => {
     next(error);
   }
 });
-router.delete("/:id", async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const findProduct = await ProductModel.findById(req.params.id);
     if (findProduct) {
@@ -138,11 +138,11 @@ router.delete("/:id", async (req, res, next) => {
         if (err) {
           console.log(err);
         }
-        res.status(200).send("Deleted");
+        res.status(200).send('Deleted');
       });
     } else {
       const err = new Error();
-      err.message = "We dont have products with that ID!";
+      err.message = 'We dont have products with that ID!';
       err.httpStatusCode = 404;
       next(err);
     }
@@ -150,40 +150,40 @@ router.delete("/:id", async (req, res, next) => {
     next(error);
   }
 });
-router.get("/calculate/sumTwoPrices", async (req, res, next) => {
+router.get('/calculate/sumTwoPrices', async (req, res, next) => {
   if (req.query && req.query.fpid && req.query.spid) {
     const product1 = await getProductPrice(req.query.fpid);
     const product2 = await getProductPrice(req.query.spid);
     try {
       const xml = begin({
-        version: "1.0",
-        encoding: "utf-8",
+        version: '1.0',
+        encoding: 'utf-8',
       })
-        .ele("soap:Envelope", {
-          "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-          "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-          "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+        .ele('soap:Envelope', {
+          'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+          'xmlns:xsd': 'http://www.w3.org/2001/XMLSchema',
+          'xmlns:soap': 'http://schemas.xmlsoap.org/soap/envelope/',
         })
-        .ele("soap:Body")
-        .ele("Add", { xmlns: "http://tempuri.org/" })
-        .ele("intA")
+        .ele('soap:Body')
+        .ele('Add', { xmlns: 'http://tempuri.org/' })
+        .ele('intA')
         .text(product1.price)
         .up()
-        .ele("intB")
+        .ele('intB')
         .text(product2.price)
         .end();
 
       const response = await axios({
-        method: "post",
-        url: "http://www.dneonline.com/calculator.asmx?op=Add",
+        method: 'post',
+        url: 'http://www.dneonline.com/calculator.asmx?op=Add',
         data: xml,
-        headers: { "Content-type": "text/xml" },
+        headers: { 'Content-type': 'text/xml' },
       });
 
       const xmlRespons = await response.data;
       const result = xml2js(xmlRespons, { compact: true });
       const total =
-        result["soap:Envelope"]["soap:Body"].AddResponse.AddResult._text;
+        result['soap:Envelope']['soap:Body'].AddResponse.AddResult._text;
       res.status(200).send(`You selected two products 
             
                 ${product1.name} => ${product1.price} $
@@ -196,19 +196,20 @@ router.get("/calculate/sumTwoPrices", async (req, res, next) => {
   }
 });
 
-router.get("/:id/exportToPDF", async (req, res, next) => {
+router.get('/:id/exportToPDF', async (req, res, next) => {
   try {
     const findProduct = await ProductModel.findById(req.params.id);
+
     if (findProduct) {
       var fonts = {
         Roboto: {
           normal:
-            "node_modules/roboto-font/fonts/Roboto/roboto-regular-webfont.ttf",
-          bold: "node_modules/roboto-font/fonts/Roboto/roboto-bold-webfont.ttf",
+            'node_modules/roboto-font/fonts/Roboto/roboto-regular-webfont.ttf',
+          bold: 'node_modules/roboto-font/fonts/Roboto/roboto-bold-webfont.ttf',
           italics:
-            "node_modules/roboto-font/fonts/Roboto/roboto-italic-webfont.ttf",
+            'node_modules/roboto-font/fonts/Roboto/roboto-italic-webfont.ttf',
           bolditalics:
-            "node_modules/roboto-font/fonts/Roboto/roboto-bolditalic-webfont.ttf",
+            'node_modules/roboto-font/fonts/Roboto/roboto-bolditalic-webfont.ttf',
         },
       };
       var printer = new PdfPrinter(fonts);
@@ -216,13 +217,13 @@ router.get("/:id/exportToPDF", async (req, res, next) => {
         pageMargins: [150, 50, 150, 50],
         content: [
           {
-            text: "Product Info",
+            text: 'Product Info',
             fontSize: 25,
-            background: "yellow",
+            background: 'yellow',
             italics: true,
           },
 
-          "                                                                         ",
+          '                                                                         ',
           `             Name: ${findProduct.name}`,
           `             Brand: ${findProduct.brand}`,
           `             Description: ${findProduct.description}`,
@@ -232,7 +233,7 @@ router.get("/:id/exportToPDF", async (req, res, next) => {
       };
       var pdfDoc = printer.createPdfKitDocument(docDefinition);
       res.setHeader(
-        "Content-Disposition",
+        'Content-Disposition',
         `attachment; filename=${findProduct._id}.pdf`
       );
       //saves file to the disk
@@ -250,28 +251,37 @@ router.get("/:id/exportToPDF", async (req, res, next) => {
   }
 });
 
-router.get("/convert/exportToCSV", async (req, res, next) => {
-  const products = await getProducts();
+router.get('/convert/exportToCSV', async (req, res, next) => {
+  const products = await ProductModel.find();
+  await fs.writeJSON(path.join(productsPath, 'products.json'), products);
   if (products.length > 0) {
     try {
       const fields = [
-        "id",
-        "name",
-        "brand",
-        "description",
-        "price",
-        "imageUrl",
-        "category",
-        "createdAt",
-        "updatedAt",
+        'id',
+        'name',
+        'brand',
+        'description',
+        'price',
+        'imageUrl',
+        'category',
+        'createdAt',
+        'updatedAt',
       ];
       const opts = { fields };
-      const input = fs.createReadStream(productsPath, { encoding: "utf8" });
+      const input = fs.createReadStream(
+        path.join(productsPath, 'products.json'),
+        { encoding: 'utf8' }
+      );
       const json2csv = new Transform(opts);
 
-      res.setHeader("Content-Disposition", "attachment; filename=products.csv");
+      console.log(json2csv);
+
+      res.setHeader('Content-Disposition', 'attachment; filename=products.csv');
       pump(input, json2csv, res);
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
   } else {
     const err = new Error();
     err.httpStatusCode = 404;
