@@ -26,6 +26,6 @@
     "pg": "^8.3.0",
     "query-to-mongo": "^0.10.1",
     "uniqid": "^5.2.0",
-    "validator": "^13.1.1"
+    "validator": "^13.7.0"
   }
 }
